@@ -3,21 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartes de mon inventaire CardTrader</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Inventaire CardTrader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            padding: 20px;
+        }
+        .card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            text-align: center;
+        }
+        .card img {
+            width: 100%;
+            height: auto;
+        }
+        .card-info {
+            padding: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Cartes de mon inventaire CardTrader</h1>
-    <div id="cards-container"></div>
 
-    <h2>Panier</h2>
-    <div id="cart-container">
-        <p id="cart-status">Votre panier est vide.</p>
-        <ul id="cart-items"></ul>
-        <p id="cart-total">Total: 0 €</p>
-        <button id="clear-cart">Vider le panier</button>
+    <h1 style="text-align: center; padding: 20px;">Mon Inventaire CardTrader</h1>
+    <div class="container" id="card-container">
+        <!-- Les cartes seront injectées ici -->
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        const API_URL = 'https://api.cardtrader.com/api/v2/products/export';
+        const API_TOKEN = 'eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJjYXJkdHJhZGVyLXByb2R1Y3Rpb24iLCJzdWIiOiJhcHA6MTM5MzgiLCJhdWQiOiJhcHA6MTM5MzgiLCJleHAiOjQ4OTU0MDQ3MjMsImp0aSI6ImJlZjQzYjNkLTk0MDktNDc2OC1hNjlmLTg5Y2M0Yzk5ZDI4NSIsImlhdCI6MTczOTczMTEyMywibmFtZSI6Ik5lcm96YnJpY2tzIEFwcCAyMDI1MDIwODE3NDkxOSJ9.setF5FzZ_scWRYIl8zTXCBP8p6ymRc0FnF2lHKZFjj5Asi7j_ZqGiOZKMbrr3e49DXwYTXtbGlyLldRz1J-flejaqXBj-EaYPiiPZ9ouWl0wl44cinNB-IKM22haLcbsHncTeiC3rK_mpoGX8lk5qAIyjhJn8UV5xx1l03hINwQd3a6FvIDb14GFgcXbalRWA13PrWCcDk7D0b_8L2RX7FAeIsfspsCSotF5M8RtWxqbxyum01cfNSpbfYgnrnHMXrCmcsRHPBHtHkPnoHMfi7ZA-x7XKKp6wFmOQ7iz3Tj6-wGMCdUA4N5Zt3hVgeZkKBNb-7Pwrvzn6wdwaWnUqQ';
+
+        async function fetchCards() {
+            const response = await fetch(API_URL, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${API_TOKEN}`
+                }
+            });
+            const data = await response.json();
+            displayCards(data.products);
+        }
+
+        function displayCards(cards) {
+            const container = document.getElementById('card-container');
+            cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.innerHTML = `
+                    <img src="${card.image_url}" alt="${card.name}">
+                    <div class="card-info">
+                        <h3>${card.name}</h3>
+                        <p>${card.price} €</p>
+                    </div>
+                `;
+                container.appendChild(cardElement);
+            });
+        }
+
+        // Lancer la récupération des cartes au chargement de la page
+        window.onload = fetchCards;
+    </script>
+
 </body>
 </html>
