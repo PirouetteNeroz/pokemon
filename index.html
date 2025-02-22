@@ -4,77 +4,329 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventaire CardTrader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        .container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-            padding: 20px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: #121212; color: white; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 300px; background: #1e1e1e; padding: 20px; border-radius: 10px; height: 100%; overflow-y: auto; }
+        .sidebar h2 { color: #FFD700; margin-bottom: 20px; text-transform: uppercase; font-size: 18px; }
+        .sidebar select, .sidebar input { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #FFD700; background: #222; color: white; }
+        .sidebar button { width: 100%; padding: 10px; background: #FFD700; color: black; font-weight: bold; border: none; cursor: pointer; border-radius: 5px; transition: 0.3s; margin-bottom: 10px; }
+        .sidebar button:hover { background: #ffbf00; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        .grid-view { display: flex; flex-wrap: wrap; gap: 16px; }
+        .list-view { display: flex; flex-direction: column; gap: 16px; }
         .card {
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            text-align: center;
+            background: #1e1e1e; border-radius: 8px; padding: 12px; width: 200px; text-align: center;
+            box-shadow: 0 4px 6px rgba(255, 215, 0, 0.2); transition: transform 0.3s ease-in-out;
         }
-        .card img {
+        .card:hover { transform: scale(1.05); }
+        .card img { width: 100%; max-height: 180px; object-fit: contain; border-bottom: 3px solid #FFD700; margin-bottom: 10px; padding-bottom: 5px; border-radius: 5px; }
+        .expansion-code {
+            font-size: 14px; background: #FFD700; color: black;
+            padding: 3px 8px; border-radius: 5px; display: inline-block; margin-top: 5px;
+        }
+        .list-card {
+            background: #1e1e1e; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 16px;
+            box-shadow: 0 4px 6px rgba(255, 215, 0, 0.2); transition: transform 0.3s ease-in-out;
+        }
+        .list-card:hover { transform: scale(1.05); }
+        .list-card img { width: 100px; height: 150px; object-fit: contain; border-radius: 5px; }
+        .list-card .info { flex: 1; text-align: left; }
+        table {
             width: 100%;
-            height: auto;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-        .card-info {
-            padding: 10px;
+        table, th, td {
+            border: none;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #FFD700;
+            color: black;
+        }
+        .cart {
+            margin-top: 20px;
+        }
+        .cart h2 {
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+        .cart ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .cart li {
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .cart p {
+            margin-top: 10px;
+        }
+        .cart button {
+            background: #FFD700;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-
-    <h1 style="text-align: center; padding: 20px;">Mon Inventaire CardTrader</h1>
-    <div class="container" id="card-container">
-        <!-- Les cartes seront injectées ici -->
+    <!-- Sidebar (Filtres) -->
+    <div class="sidebar">
+        <h2>Filtres</h2>
+        <input type="text" id="searchInput" placeholder="🔍 Rechercher..." onkeyup="updateDisplay()">
+        <select id="expansionFilter">
+            <option value="">Toutes les Extensions</option>
+        </select>
+        <select id="languageFilter">
+            <option value="">Toutes les Langues</option>
+            <option value="en">Anglais</option>
+            <option value="jp">Japonais</option>
+            <!-- Ajoutez d'autres langues si nécessaire -->
+        </select>
+        <select id="rarityFilter">
+            <option value="">Toutes les Raretés</option>
+            <option value="Common">Commun</option>
+            <option value="Uncommon">Peu Commun</option>
+            <option value="Rare">Rare</option>
+            <!-- Ajoutez d'autres raretés si nécessaire -->
+        </select>
+        <select id="reverseFilter">
+            <option value="">Toutes les Cartes</option>
+            <option value="true">Cartes Inversées</option>
+            <option value="false">Cartes Normales</option>
+        </select>
+        <select id="sortFilter">
+            <option value="">Aucun Tri</option>
+            <option value="asc">Tri Ascendant</option>
+            <option value="desc">Tri Descendant</option>
+        </select>
+        <button onclick="updateDisplay()">Rechercher</button>
+        <button onclick="toggleView()">Basculer en Liste</button>
+        <!-- Panier -->
+        <div id="cart" class="cart">
+            <h2>Panier</h2>
+            <ul id="cartItems"></ul>
+            <p>Total: <span id="cartTotal">0.00</span> €</p>
+            <button onclick="clearCart()">Vider le panier</button>
+        </div>
     </div>
-
+    <!-- Contenu Principal -->
+    <div class="content">
+        <h2>Inventaire</h2>
+        <div id="gridView" class="grid-view"></div>
+        <table id="tableView" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Nom</th>
+                    <th>Code d'Extension</th>
+                    <th>Prix</th>
+                    <th>Quantité</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
     <script>
-        const API_URL = 'https://api.cardtrader.com/api/v2/products/export';
-        const API_TOKEN = 'eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJjYXJkdHJhZGVyLXByb2R1Y3Rpb24iLCJzdWIiOiJhcHA6MTM5MzgiLCJhdWQiOiJhcHA6MTM5MzgiLCJleHAiOjQ4OTU0MDQ3MjMsImp0aSI6ImJlZjQzYjNkLTk0MDktNDc2OC1hNjlmLTg5Y2M0Yzk5ZDI4NSIsImlhdCI6MTczOTczMTEyMywibmFtZSI6Ik5lcm96YnJpY2tzIEFwcCAyMDI1MDIwODE3NDkxOSJ9.setF5FzZ_scWRYIl8zTXCBP8p6ymRc0FnF2lHKZFjj5Asi7j_ZqGiOZKMbrr3e49DXwYTXtbGlyLldRz1J-flejaqXBj-EaYPiiPZ9ouWl0wl44cinNB-IKM22haLcbsHncTeiC3rK_mpoGX8lk5qAIyjhJn8UV5xx1l03hINwQd3a6FvIDb14GFgcXbalRWA13PrWCcDk7D0b_8L2RX7FAeIsfspsCSotF5M8RtWxqbxyum01cfNSpbfYgnrnHMXrCmcsRHPBHtHkPnoHMfi7ZA-x7XKKp6wFmOQ7iz3Tj6-wGMCdUA4N5Zt3hVgeZkKBNb-7Pwrvzn6wdwaWnUqQ';
+        const API_PRODUCTS = 'https://api.cardtrader.com/api/v2/products/export';
+        const API_EXPANSIONS = 'https://api.cardtrader.com/api/v2/expansions/export';
+        const API_TOKEN = 'eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJjYXJkdHJhZGVyLXByb2R1Y3Rpb24iLCJzdWIiOiJhcHA6MTM5MzgiLCJhdWQiOiJhcHA6MTM5MzgiLCJleHAiOjQ4OTU2MzQ3MTcsImp0aSI6IjQxMjA3NmNjLTcyZTEtNDljOC1iODA2LTE3OTJiNmU3N2JhMyIsImlhdCI6MTczOTk2MTExNywibmFtZSI6Ik5lcm96YnJpY2tzIEFwcCAyMDI1MDIwODE3NDkxOSJ9.PkkEXit3MvxmVij_e5Eyz55k_3EYgQF-2ln9goSfMbQD3mIpDVrSkQa010BfnF9IR1L8fvswAyxk56qiUr2LKm2KXX0iKAvVRR373A3XEDwgNtGGBBAR-rxh8raL1hW8e4AH_bps1tVFTrdZ_W-Odg5egSxLFIxnLgi0a9It5KVeVkjdgLmxYuaCXspgml9TXfgJcJ2GH62izvB5eUsAj4NhobpH5q_Pyfbyw2cJu4HmilQjBSOm4NsmRW7Nd692tNT2semj1Oh1UqV1xel2WewtLaWlUAVHYt2LSMWrEw_kx9Yjk9Kz-rM67tk0nXosKklnIigJpcrmRUXf-O7qJA';
+        const IMAGE_BASE_URL = 'https://www.cardtrader.com/images/blueprint/';
+        let inventory = [];
+        let expansions = {};
+        let viewMode = 'grid'; // Mode d'affichage par défaut
+        let cart = [];
 
-        async function fetchCards() {
-            const response = await fetch(API_URL, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${API_TOKEN}`
+        /** 🛠️ Récupération des extensions avec leur code */
+        async function fetchExpansions() {
+            try {
+                const response = await fetch(API_EXPANSIONS, {
+                    method: "GET",
+                    headers: { "Authorization": `Bearer ${API_TOKEN}` }
+                });
+                if (!response.ok) throw new Error(`Erreur API Expansions: ${response.status}`);
+                const expansionsData = await response.json();
+                const expansionFilter = document.getElementById("expansionFilter");
+                expansionsData.forEach(exp => {
+                    expansions[exp.id] = exp.code; // Associe `id` à `expansion_code`
+                    let option = document.createElement("option");
+                    option.value = exp.id;
+                    option.textContent = exp.code;
+                    expansionFilter.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Erreur lors du chargement des extensions :", error);
+            }
+        }
+
+        /** 🃏 Récupération de l'inventaire des cartes */
+        async function fetchInventory() {
+            try {
+                const response = await fetch(API_PRODUCTS, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${API_TOKEN}` }
+                });
+                if (!response.ok) throw new Error(`Erreur API Produits: ${response.status}`);
+                inventory = await response.json();
+                updateDisplay();
+            } catch (error) {
+                document.getElementById('gridView').innerHTML = `<p>⚠️ Erreur API : ${error.message}</p>`;
+            }
+        }
+
+        /** 🔍 Filtre et affiche les cartes */
+        function updateDisplay() {
+            const filteredCards = inventory.filter(card => {
+                let searchQuery = document.getElementById('searchInput').value.toLowerCase();
+                let selectedExpansion = document.getElementById('expansionFilter').value;
+                let selectedLanguage = document.getElementById('languageFilter').value;
+                let selectedRarity = document.getElementById('rarityFilter').value;
+                let selectedReverse = document.getElementById('reverseFilter').value;
+                if (searchQuery && !card.name_en.toLowerCase().includes(searchQuery)) return false;
+                if (selectedExpansion && card.expansion.id != selectedExpansion) return false;
+                if (selectedLanguage && card.properties_hash.pokemon_language != selectedLanguage) return false;
+                if (selectedRarity && card.properties_hash.pokemon_rarity != selectedRarity) return false;
+                if (selectedReverse !== "" && card.properties_hash.pokemon_reverse.toString() !== selectedReverse) return false;
+                return true;
+            });
+
+            let sortOrder = document.getElementById('sortFilter').value;
+            if (sortOrder === 'asc') {
+                filteredCards.sort((a, b) => a.properties_hash.collector_number - b.properties_hash.collector_number);
+            } else if (sortOrder === 'desc') {
+                filteredCards.sort((a, b) => b.properties_hash.collector_number - a.properties_hash.collector_number);
+            }
+
+            const gridView = document.getElementById('gridView');
+            const tableView = document.getElementById('tableView');
+            const tableBody = tableView.querySelector('tbody');
+
+            gridView.innerHTML = "";
+            tableBody.innerHTML = "";
+
+            gridView.className = viewMode === 'grid' ? 'grid-view' : 'list-view';
+            tableView.style.display = viewMode === 'grid' ? 'none' : 'table';
+
+            for (const card of filteredCards) {
+                const expansionCode = expansions[card.expansion.id] || "???";
+                const price = (card.price_cents / 100).toFixed(2);
+                const collectorNumber = card.properties_hash.collector_number || "N/A";
+                const formattedName = `${card.name_en} (${expansionCode} ${collectorNumber})`;
+                const quantity = card.quantity || 0;
+
+                if (viewMode === 'grid') {
+                    gridView.innerHTML += `
+                        <div class="card">
+                            <img src="${IMAGE_BASE_URL}${card.blueprint_id}" alt="${formattedName}">
+                            <h3>${formattedName}</h3>
+                            <span class="expansion-code">${expansionCode}</span>
+                            <p class="price">${price} €</p>
+                            <p class="quantity">Quantité: ${quantity}</p>
+                            <button onclick="addToCart('${card.blueprint_id}', '${formattedName}', ${price}, ${quantity})">Ajouter au panier</button>
+                        </div>
+                    `;
+                } else {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><img src="${IMAGE_BASE_URL}${card.blueprint_id}" alt="${formattedName}" style="width: 50px; height: 75px;"></td>
+                        <td>${formattedName}</td>
+                        <td>${expansionCode}</td>
+                        <td>${price} €</td>
+                        <td>${quantity}</td>
+                        <td><button onclick="addToCart('${card.blueprint_id}', '${formattedName}', ${price}, ${quantity})">Ajouter au panier</button></td>
+                    `;
+                    tableBody.appendChild(row);
                 }
-            });
-            const data = await response.json();
-            displayCards(data.products);
+            }
         }
 
-        function displayCards(cards) {
-            const container = document.getElementById('card-container');
-            cards.forEach(card => {
-                const cardElement = document.createElement('div');
-                cardElement.className = 'card';
-                cardElement.innerHTML = `
-                    <img src="${card.image_url}" alt="${card.name}">
-                    <div class="card-info">
-                        <h3>${card.name}</h3>
-                        <p>${card.price} €</p>
-                    </div>
+        /** Bascule entre les modes d'affichage */
+        function toggleView() {
+            viewMode = viewMode === 'grid' ? 'list' : 'grid';
+            document.querySelector('.sidebar button:last-child').textContent = viewMode === 'grid' ? 'Basculer en Liste' : 'Basculer en Grille';
+            updateDisplay();
+        }
+
+        /** Ajouter une carte au panier */
+        function addToCart(blueprintId, name, price, quantity) {
+            const existingItem = cart.find(item => item.blueprintId === blueprintId);
+            if (existingItem) {
+                if (existingItem.quantity >= quantity) {
+                    alert("Quantité maximale atteinte pour cette carte.");
+                    return;
+                }
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ blueprintId, name, price, quantity: 1 });
+            }
+            updateCart();
+        }
+
+        /** Mettre à jour l'affichage du panier */
+        function updateCart() {
+            const cartItems = document.getElementById('cartItems');
+            const cartTotal = document.getElementById('cartTotal');
+            cartItems.innerHTML = '';
+            let total = 0;
+            cart.forEach(item => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    ${item.name} - ${item.price} € x ${item.quantity}
+                    <button onclick="decreaseQuantity('${item.blueprintId}')">-</button>
+                    <button onclick="increaseQuantity('${item.blueprintId}', ${item.quantity})">+</button>
                 `;
-                container.appendChild(cardElement);
+                cartItems.appendChild(listItem);
+                total += item.price * item.quantity;
             });
+            cartTotal.textContent = total.toFixed(2);
         }
 
-        // Lancer la récupération des cartes au chargement de la page
-        window.onload = fetchCards;
-    </script>
+        /** Diminuer la quantité d'une carte dans le panier */
+        function decreaseQuantity(blueprintId) {
+            const item = cart.find(item => item.blueprintId === blueprintId);
+            if (item) {
+                if (item.quantity > 1) {
+                    item.quantity -= 1;
+                } else {
+                    cart = cart.filter(item => item.blueprintId !== blueprintId);
+                }
+                updateCart();
+            }
+        }
 
+        /** Augmenter la quantité d'une carte dans le panier */
+        function increaseQuantity(blueprintId, maxQuantity) {
+            const item = cart.find(item => item.blueprintId === blueprintId);
+            if (item) {
+                if (item.quantity < maxQuantity) {
+                    item.quantity += 1;
+                } else {
+                    alert("Quantité maximale atteinte pour cette carte.");
+                }
+                updateCart();
+            }
+        }
+
+        /** Vider le panier */
+        function clearCart() {
+            cart = [];
+            updateCart();
+        }
+
+        // Chargement des données puis affichage
+        fetchExpansions().then(fetchInventory);
+    </script>
 </body>
 </html>
