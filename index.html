@@ -6,7 +6,7 @@
     <title>Inventaire CardTrader</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+              * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { background: #121212; color: white; display: flex; height: 100vh; overflow: hidden; }
         .sidebar { width: 300px; background: #1e1e1e; padding: 20px; border-radius: 10px; height: 100%; overflow-y: auto; }
         .sidebar h2 { color: #FFD700; margin-bottom: 20px; text-transform: uppercase; font-size: 18px; }
@@ -91,20 +91,17 @@
             <option value="">Toutes les Langues</option>
             <option value="en">Anglais</option>
             <option value="jp">Japonais</option>
-            <option value="fr">Français</option>
-            <!-- Ajoutez d'autres langues si nécessaire -->
         </select>
         <select id="rarityFilter">
             <option value="">Toutes les Raretés</option>
             <option value="Common">Commun</option>
             <option value="Uncommon">Peu Commun</option>
             <option value="Rare">Rare</option>
-            <!-- Ajoutez d'autres raretés si nécessaire -->
         </select>
         <select id="reverseFilter">
-            <option value="">Reverse ?</option>
-            <option value="true">Oui</option>
-            <option value="false">Non</option>
+            <option value="">Toutes les Cartes</option>
+            <option value="true">Cartes Inversées</option>
+            <option value="false">Cartes Normales</option>
         </select>
         <select id="sortFilter">
             <option value="">Aucun Tri</option>
@@ -261,10 +258,10 @@
         }
 
         /** Ajouter une carte au panier */
-        function addToCart(blueprintId, name, price, quantity) {
+        function addToCart(blueprintId, name, price, maxQuantity) {
             const existingItem = cart.find(item => item.blueprintId === blueprintId);
             if (existingItem) {
-                if (existingItem.quantity >= quantity) {
+                if (existingItem.quantity >= maxQuantity) {
                     alert("Quantité maximale atteinte pour cette carte.");
                     return;
                 }
@@ -273,6 +270,7 @@
                 cart.push({ blueprintId, name, price, quantity: 1 });
             }
             updateCart();
+            saveCart(); // Sauvegarder le panier
         }
 
         /** Mettre à jour l'affichage du panier */
@@ -304,6 +302,7 @@
                     cart = cart.filter(item => item.blueprintId !== blueprintId);
                 }
                 updateCart();
+                saveCart(); // Sauvegarder le panier
             }
         }
 
@@ -317,6 +316,7 @@
                     alert("Quantité maximale atteinte pour cette carte.");
                 }
                 updateCart();
+                saveCart(); // Sauvegarder le panier
             }
         }
 
@@ -324,10 +324,28 @@
         function clearCart() {
             cart = [];
             updateCart();
+            saveCart(); // Sauvegarder le panier
+        }
+
+        /** Sauvegarder le panier dans localStorage */
+        function saveCart() {
+            localStorage.setItem('cart', JSON.stringify(cart));
+        }
+
+        /** Charger le panier depuis localStorage */
+        function loadCart() {
+            const savedCart = localStorage.getItem('cart');
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+                updateCart(); // Mettre à jour l'affichage du panier
+            }
         }
 
         // Chargement des données puis affichage
-        fetchExpansions().then(fetchInventory);
+        window.addEventListener('load', () => {
+            fetchExpansions().then(fetchInventory);
+            loadCart(); // Charger le panier sauvegardé
+        });
     </script>
 </body>
 </html>
