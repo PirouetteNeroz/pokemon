@@ -11,8 +11,138 @@
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Vos styles CSS ici */
+        .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card-details {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+/* Couleur du texte en blanc */
+.card-name,
+.card-expansion,
+.card-price,
+.card-rarity,
+.card-condition,
+.card-collector-number,
+.card-quantity {
+    color: white;
+}
+
+/* Style pour la condition de la carte */
+.card-condition {
+    font-size: 0.875rem;
+    font-weight: bold;
+    text-align: left; /* Alignement à gauche */
+    margin: 4px 0;
+    opacity: 0.8; /* Légère transparence */
+}
+
+/* Style pour la rareté */
+.card-rarity {
+    font-size: 0.875rem;
+    font-weight: bold;
+    margin: 4px 0;
+}
+
+/* Style pour le numéro de collection */
+.card-collector-number {
+    font-size: 1rem; /* Taille augmentée */
+    font-weight: bold;
+    margin-left: 8px; /* Espacement par rapport au nom */
+    opacity: 0.8; /* Légère transparence */
+}
+
+/* Style pour l'extension */
+.card-expansion {
+    font-size: 0.875rem;
+    margin-top: 4px;
+    opacity: 0.8; /* Légère transparence pour l'extension */
+}
+
+/* Style pour le prix */
+.card-price {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center; /* Centrage du prix */
+    margin: 8px 0;
+}
+
+/* Style pour la quantité disponible */
+.card-quantity {
+    display: inline-block;
+    padding: 4px 8px;
+    background-color: rgba(255, 255, 255, 0.1); /* Fond légèrement visible */
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: bold;
+    text-align: center;
+    margin: 0 auto;
+}
+        /* Conteneur pour la ribbon */
+        .ribbon-container {
+            position: relative;
+        }
+        /* Ribbon en haut à gauche */
+        .ribbon {
+            position: absolute;
+            top: 10px;
+            left: -10px;
+            background: blue;
+            color: white;
+            padding: 5px 15px;
+            font-size: 12px;
+            font-weight: bold;
+            transform: rotate(-20deg);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        /* Effet lumineux sur les Reverse Foil */
+        .reverse-glow {
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.8);
+            border: 2px solid rgba(0, 123, 255, 0.5);
+            border-radius: 10px;
+        }
+        /* Animation pour l'icône du panier */
+        .cart-animation-icon {
+            position: fixed;
+            font-size: 24px;
+            color: #FFC107; /* Couleur de l'icône */
+            z-index: 1000;
+            transition: all 0.8s ease-in-out; /* Durée et effet de l'animation */
+        }
+        /* Animation d'entrée et de sortie */
+        .slide-fade-enter-active {
+            transition: all 0.8s ease;
+        }
+        .slide-fade-leave-active {
+            transition: all 0.5s ease;
+        }
+        .slide-fade-enter-from,
+        .slide-fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px); /* Déplacement vers le bas */
+        }
+        /* Animation fade */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.5s ease;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
     </style>
+
 </head>
 <body>
     <div id="app">
