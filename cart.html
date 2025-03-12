@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panier Carameche</title>
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.0/dist/vuetify.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Style général */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212; /* Fond sombre */
+            color: #ffffff; /* Texte blanc */
+        }
+        .cart-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1E1E1E; /* Fond de contenu sombre */
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .cart-table th, .cart-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333; /* Bordures plus sombres */
+        }
+        .cart-table th {
+            background-color: #1E1E1E; /* Fond sombre pour l'en-tête */
+            font-weight: bold;
+            color: #FFD700; /* Couleur dorée pour le texte */
+        }
+        .cart-table .actions {
+            text-align: center;
+        }
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .quantity-control span {
+            font-size: 1em;
+            font-weight: bold;
+        }
+        .cart-summary {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #1E1E1E; /* Fond sombre */
+            border-radius: 8px;
+        }
+        .cart-summary h3 {
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            color: #FFD700; /* Couleur dorée */
+        }
+        .cart-summary .total {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #FFD700; /* Couleur dorée */
+        }
+        .cart-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .cart-actions .v-btn {
+            text-transform: none;
+        }
+        .empty-cart-message {
+            text-align: center;
+            padding: 40px;
+            color: #666; /* Texte gris */
+        }
+        .empty-cart-message .v-icon {
+            color: #666; /* Icône grise */
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <v-app>
+            <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
+                {{ snackbar.message }}
+                <template v-slot:action="{ attrs }">
+                    <v-btn text v-bind="attrs" @click="snackbar.show = false">Fermer</v-btn>
+                </template>
+            </v-snackbar>
+
+            <v-app-bar app color="primary" dark>
+                <v-toolbar-title>
+                    <a href="/inventory.html" style="text-decoration: none; color: inherit;">
+                        <v-btn text>Carameche</v-btn>
+                    </a>
+                </v-toolbar-title>
+                <v-spacer></v-spacer>
+                <v-text-field
+                    v-model="searchQuery"
+                    label="Rechercher..."
+                    prepend-icon="mdi-magnify"
+                    outlined
+                    dense
+                    hide-details
+                    class="mr-4"
+                ></v-text-field>
+                <a href="/inventory.html" style="text-decoration: none; color: inherit;">
+                    <v-btn icon>
+                        <v-icon>mdi-home</v-icon>
+                    </v-btn>
+                </a>
+                <a href="/cart.html" style="text-decoration: none; color: inherit;">
+                    <v-btn icon>
+                        <v-icon>mdi-cart</v-icon>
+                        <span>{{ totalItemsInCart }}</span>
+                    </v-btn>
+                </a>
+            </v-app-bar>
+
+            <v-main>
+                <v-container fluid>
+                    <div class="cart-container">
+                        <h2 class="text-warning mb-3">Panier</h2>
+                        <table class="cart-table" v-if="cart.length > 0">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Extension</th>
+                                    <th>Numéro de collection</th> 
+                                    <th>Quantité</th>
+                                    <th>Prix unitaire</th>
+                                    <th>Prix total</th>
+                                    <th class="actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="item in cart" :key="item.blueprintId">
+                                    <td>{{ item.name }}</td>
+                                    <td>{{ item.extension }}</td>
+                                    <td>{{ item.collectorNumber }}</td>
+                                    <td>
+                                        <div class="quantity-control">
+                                            <v-btn icon @click="decreaseQuantity(item.blueprintId)">
+                                                <v-icon>mdi-minus</v-icon>
+                                            </v-btn>
+                                            <span>{{ item.quantity }}</span>
+                                            <v-btn icon @click="increaseQuantity(item.blueprintId, item.maxQuantity)">
+                                                <v-icon>mdi-plus</v-icon>
+                                            </v-btn>
+                                        </div>
+                                    </td>
+                                    <td>{{ item.price.toFixed(2) }} €</td>
+                                    <td>{{ (item.price * item.quantity).toFixed(2) }} €</td>
+                                    <td class="actions">
+                                        <v-btn icon @click="removeItem(item.blueprintId)">
+                                            <v-icon color="error">mdi-delete</v-icon>
+                                        </v-btn>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div v-else class="empty-cart-message">
+                            <v-icon size="64">mdi-cart-off</v-icon>
+                            <p>Votre panier est vide.</p>
+                        </div>
+
+                        <!-- Récapitulatif du panier -->
+                        <div class="cart-summary" v-if="cart.length > 0">
+                            <h3>Récapitulatif</h3>
+                            <div class="total">Total : <span class="font-weight-bold">{{ cartTotal.toFixed(2) }}</span> €</div>
+                        </div>
+
+                        <!-- Champ pour le pseudo -->
+                        <v-text-field
+                            v-model="pseudo"
+                            label="Votre pseudo"
+                            outlined
+                            dense
+                            class="mt-3"
+                            v-if="cart.length > 0"
+                        ></v-text-field>
+
+                        <!-- Actions du panier -->
+                        <div class="cart-actions" v-if="cart.length > 0">
+                            <v-btn color="error" @click="clearCart">Vider le panier</v-btn>
+                            <v-btn color="primary" @click="continueShopping">Continuer mes achats</v-btn>
+                            <v-btn color="success" @click="validateCart">Valider le panier</v-btn>
+                        </div>
+                    </div>
+                </v-container>
+            </v-main>
+        </v-app>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@3.4.0/dist/vuetify.min.js"></script>
+    <script type="module">
+        import { fetchFrenchPokemonName, saveCartToLocalStorage, getCartFromLocalStorage } from './shared.js';
+
+        const { createApp, ref, reactive, computed } = Vue;
+        const vuetify = Vuetify.createVuetify({
+            theme: {
+                defaultTheme: 'dark',
+                themes: {
+                    dark: {
+                        colors: {
+                            primary: '#FFD700',
+                            secondary: '#1E1E1E',
+                            background: '#121212',
+                            surface: '#1E1E1E',
+                            error: '#FF5252',
+                            info: '#2196F3',
+                            success: '#4CAF50',
+                            warning: '#FFC107',
+                        },
+                    },
+                },
+            },
+        });
+
+        // Initialiser Supabase
+        const supabaseUrl = 'https://aibrhuoxwqwqbkhjhote.supabase.co'; // Remplacez par votre URL Supabase
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpYnJodW94d3F3cWJraGpob3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA1MTUxNzIsImV4cCI6MjA1NjA5MTE3Mn0.Lz_P5ZIUwL5mqIuMjJn3pxWnYV8SwprKUuDEnSOHii0'; // Remplacez par votre clé publique Supabase
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        const app = createApp({
+            setup() {
+                const cart = ref(getCartFromLocalStorage());
+                const userId = ref(generateUserId());
+                const tab = ref('cart');
+                const pseudo = ref('');
+                const snackbar = reactive({
+                    show: false,
+                    message: '',
+                    color: 'success',
+                });
+
+                function showNotification(message, color = 'success') {
+                    snackbar.message = message;
+                    snackbar.color = color;
+                    snackbar.show = true;
+                    setTimeout(() => {
+                        snackbar.show = false;
+                    }, 3000);
+                }
+
+                function decreaseQuantity(blueprintId) {
+                    const item = cart.value.find(item => item.blueprintId === blueprintId);
+                    if (item && item.quantity > 1) {
+                        item.quantity -= 1;
+                        saveCartToLocalStorage(cart.value); // Sauvegarder les modifications
+                    } else {
+                        showNotification("La quantité ne peut pas être inférieure à 1.", 'error');
+                    }
+                }
+
+                function increaseQuantity(blueprintId, maxQuantity) {
+                    const item = cart.value.find(item => item.blueprintId === blueprintId);
+                    if (item && item.quantity < maxQuantity) {
+                        item.quantity += 1;
+                        saveCartToLocalStorage(cart.value); // Sauvegarder les modifications
+                    } else {
+                        showNotification("Quantité maximale atteinte pour cette carte.", 'error');
+                    }
+                }
+
+                function removeItem(blueprintId) {
+                    cart.value = cart.value.filter(item => item.blueprintId !== blueprintId);
+                    showNotification("L'article a été supprimé du panier.", 'info');
+                    saveCartToLocalStorage(cart.value);
+                }
+
+                function clearCart() {
+                    cart.value = [];
+                    showNotification("Le panier a été vidé.", 'info');
+                    saveCartToLocalStorage(cart.value);
+                }
+
+                function continueShopping() {
+                    window.location.href = '/inventory.html';
+                }
+
+                async function validateCart() {
+                    if (cart.value.length === 0) {
+                        showNotification('Votre panier est vide.', 'error');
+                        return;
+                    }
+
+                    if (!pseudo.value) {
+                        showNotification('Veuillez entrer un pseudo pour valider votre panier.', 'error');
+                        return;
+                    }
+
+                    // Ajouter collectorNumber et extension à chaque article du panier
+                    const cartDataWithDetails = cart.value.map(item => ({
+                        ...item,
+                        collectorNumber: item.collectorNumber || 'Inconnu', // Assurez-vous que cette propriété existe
+                        extension: item.extension || 'Inconnue' // Assurez-vous que cette propriété existe
+                    }));
+
+                    // Envoyer le panier à Supabase
+                    const { data, error } = await supabaseClient
+                        .from('orders')
+                        .insert([
+                            {
+                                user_id: userId.value,
+                                pseudo: pseudo.value,
+                                cart_data: cartDataWithDetails, // Utiliser les données mises à jour
+                                status: 'pending'
+                            }
+                        ]);
+
+                    if (error) {
+                        console.error('Erreur lors de la validation du panier:', error);
+                        showNotification('Erreur lors de la validation du panier.', 'error');
+                    } else {
+                        console.log('Panier validé avec succès:', data);
+                        showNotification('Votre panier a été validé avec succès.', 'success');
+                        clearCart();
+                        pseudo.value = '';
+                    }
+                }
+
+                function generateUserId() {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        const r = Math.random() * 16 | 0;
+                        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                }
+
+                const cartTotal = computed(() => cart.value.reduce((total, item) => total + item.price * item.quantity, 0));
+                const totalItemsInCart = computed(() => cart.value.reduce((total, item) => total + item.quantity, 0));
+
+                return {
+                    cart,
+                    tab,
+                    pseudo,
+                    snackbar,
+                    cartTotal,
+                    totalItemsInCart,
+                    decreaseQuantity,
+                    increaseQuantity,
+                    removeItem,
+                    clearCart,
+                    continueShopping,
+                    validateCart,
+                    showNotification,
+                };
+            }
+        });
+
+        app.use(vuetify);
+        app.mount('#app');
+    </script>
+</body>
+</html>
