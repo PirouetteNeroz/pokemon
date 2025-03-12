@@ -141,6 +141,40 @@
         .fade-enter-from, .fade-leave-to {
             opacity: 0;
         }
+
+/* Style pour le tableau */
+.v-data-table {
+    margin-top: 20px;
+    background-color: #1E1E1E; /* Fond sombre pour le thème dark */
+    color: white; /* Texte en blanc */
+}
+
+.v-data-table .v-img {
+    border-radius: 5px;
+}
+
+.v-data-table .v-btn {
+    margin: 0;
+    color: #FFC107; /* Couleur jaune pour les boutons */
+}
+
+/* Style pour les en-têtes du tableau */
+.v-data-table-header {
+    background-color: #121212; /* Fond sombre pour les en-têtes */
+    color: white; /* Texte en blanc */
+}
+
+/* Style pour les lignes du tableau */
+.v-data-table__tr {
+    background-color: #1E1E1E; /* Fond sombre pour les lignes */
+    color: white; /* Texte en blanc */
+}
+
+/* Style pour les lignes au survol */
+.v-data-table__tr:hover {
+    background-color: #2E2E2E; /* Fond légèrement plus clair au survol */
+}
+        
     </style>
 </head>
 <body>
@@ -200,6 +234,9 @@
             </v-tabs>
             <v-main>
                 <v-container fluid>
+                     <v-btn @click="viewMode = viewMode === 'grid' ? 'table' : 'grid'" class="mb-4">
+        {{ viewMode === 'grid' ? 'Vue Tableau' : 'Vue Grille' }}
+    </v-btn>   
                     <!-- Contenu de l'onglet Inventaire -->
                     <v-window v-model="tab">
                         <transition name="fade" mode="out-in">
@@ -281,6 +318,32 @@
                                         </v-card>
                                     </v-col>
                                 </v-row>
+
+
+  <!-- Section Tableau -->
+    <v-row v-if="viewMode === 'table'">
+        <v-col cols="12">
+            <v-card class="pa-3">
+                <h2>Inventaire (Liste)</h2>
+                <v-data-table
+                    :headers="tableHeaders"
+                    :items="paginatedCards"
+                    :items-per-page="itemsPerPage"
+                    :page.sync="currentPage"
+                    hide-default-footer
+                    class="elevation-1"
+                >
+                    <!-- Colonnes du tableau -->
+                </v-data-table>
+                <!-- Pagination pour le tableau -->
+                <v-pagination v-model="currentPage" :length="totalPages" class="mt-4"></v-pagination>
+            </v-card>
+        </v-col>
+    </v-row>
+
+
+
+                                
                             </v-window-item>
                         </transition>
                     </v-window>
@@ -352,6 +415,17 @@
                     { title: 'Heavily Played', value: 'Heavily Played' },
                     { title: 'Poor', value: 'Poor' }
                 ];
+                const tableHeaders = ref([
+    { text: 'Numéro de Collection', value: 'properties_hash.collector_number', align: 'start' },
+    { text: 'Image', value: 'image', sortable: false, align: 'center' },
+    { text: 'Quantité', value: 'quantity', align: 'center' },
+    { text: 'Langue', value: 'properties_hash.pokemon_language', align: 'center' },
+    { text: 'Condition', value: 'condition', align: 'center' },
+    { text: 'Prix', value: 'price_cents', align: 'center' },
+    { text: 'Version', value: 'properties_hash.pokemon_reverse', align: 'center' },
+    { text: 'Actions', value: 'actions', sortable: false, align: 'center' }
+]);
+                const viewMode = ref('grid'); // 'grid' ou 'table'
                 // Fonction pour afficher des notifications
                 function showNotification(message, color = 'success') {
                     snackbar.message = message;
